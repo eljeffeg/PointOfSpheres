@@ -18,19 +18,6 @@ import java.nio.IntBuffer;
 
 public class sphereofpoints6 extends PApplet {
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 float[] projMatrix;
 float[] mvMatrix;
 String skyboxName = "besiege";   
