@@ -1,12 +1,12 @@
-import com.jogamp.opengl.util.texture.Texture;
-import com.jogamp.opengl.util.texture.awt.AWTTextureIO;
+import com.sun.opengl.util.BufferUtil;
+import com.sun.opengl.util.texture.Texture;
+import com.sun.opengl.util.texture.TextureIO;
 import processing.core.PApplet;
 import processing.core.PVector;
 import processing.opengl.PGraphicsOpenGL;
 
 import javax.imageio.ImageIO;
-import javax.media.opengl.GL2;
-import javax.media.opengl.GLProfile;
+import javax.media.opengl.GL;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
 import java.io.File;
@@ -17,18 +17,6 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
 public class sphereofpoints6 extends PApplet {
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 float[] projMatrix;
@@ -42,7 +30,7 @@ public int vnodelength;
 int round =0;
 GLSLshader shader;
 PGraphicsOpenGL pgl;
-GL2 gl;
+GL gl;
 Texture particleImg, ringImg;
 Geodesic rt;
 Point3d[] rts;
@@ -69,40 +57,40 @@ public void setup() {
   rts = rt.getPointList();
 
   pgl = (PGraphicsOpenGL) g;
-  gl = pgl.beginPGL().gl.getGL2();
+  gl = pgl.gl;
   gl.setSwapInterval(1); 
   initShaders();
   initNodes();
   try {
-    particleImg = AWTTextureIO.newTexture(new File(dataPath("particle.png")), true);
-    ringImg = AWTTextureIO.newTexture(new File(dataPath("select.png")), true); 
+    particleImg = TextureIO.newTexture(new File(dataPath("particle.png")), true);
+    ringImg =  TextureIO.newTexture(new File(dataPath("select.png")), true);
   }
   catch (IOException e) {    
     println("Texture file (particle.png) is missing");
     exit();  // or handle it some other way
   }
-   pgl.beginPGL();
+   pgl.beginGL();
 
   skybox = gl.glGenLists(1);
-  gl.glNewList(skybox, GL2.GL_COMPILE);
+  gl.glNewList(skybox, GL.GL_COMPILE);
   
-  gl.glFrontFace(GL2.GL_CCW);
-  gl.glEnable(GL2.GL_CULL_FACE);
+  gl.glFrontFace(GL.GL_CCW);
+  gl.glEnable(GL.GL_CULL_FACE);
   TexturedCube();
-  gl.glDisable(GL2.GL_CULL_FACE);
+  gl.glDisable(GL.GL_CULL_FACE);
   gl.glEndList();
 
-  pgl.endPGL();
+  pgl.endGL();
 //  gl.glHint (GL.GL_POINT_SMOOTH_HINT, GL.GL_NICEST);
  
   // writestartlog("Stage 3 - Textures - Point smooth end");
-  gl.glPointParameterf(GL2.GL_POINT_SIZE_MAX, 1000.0f);
-  gl.glPointParameterf(GL2.GL_POINT_SIZE_MIN, 0.0f );
-  gl.glPointParameterf( GL2.GL_POINT_FADE_THRESHOLD_SIZE, 60.0f );
-  gl.glTexEnvi(GL2.GL_POINT_SPRITE, GL2.GL_COORD_REPLACE, GL2.GL_TRUE);
-  gl.glEnable( GL2.GL_BLEND );
+  gl.glPointParameterf(GL.GL_POINT_SIZE_MAX, 1000.0f);
+  gl.glPointParameterf(GL.GL_POINT_SIZE_MIN, 0.0f );
+  gl.glPointParameterf( GL.GL_POINT_FADE_THRESHOLD_SIZE, 60.0f );
+  gl.glTexEnvi(GL.GL_POINT_SPRITE, GL.GL_COORD_REPLACE, GL.GL_TRUE);
+  gl.glEnable( GL.GL_BLEND );
   // frameRate(2000);
-   gl = pgl.beginPGL().gl.getGL2();
+
  // cam.setDistance(3000);
  // cam.setMinimumDistance(75);
  // cam.rotateX(.05);
@@ -120,58 +108,57 @@ public void draw() {
   rtx += .003f;
   rotateY(rtx);
   
-  loadMatrix();  //EXCLUDE if running newer than 2.0b7
-  pgl.beginPGL();
+  //loadMatrix();  //EXCLUDE if running newer than 2.0b7
+  pgl.beginGL();
   gl.glCallList( skybox );
-  pgl.endPGL();
+  pgl.endGL();
   
 
-  gl = pgl.beginPGL().gl.getGL2(); 
-  gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE);
-  pgl.beginPGL();
-  gl.glDisable(GL2.GL_POINT_SMOOTH);
-  gl.glEnable(GL2.GL_POINT_SPRITE);
-  gl.glEnableClientState(GL2.GL_VERTEX_ARRAY);
-  gl.glEnable(GL2.GL_VERTEX_PROGRAM_POINT_SIZE_ARB);
+  gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE);
+  pgl.beginGL();
+  gl.glDisable(GL.GL_POINT_SMOOTH);
+  gl.glEnable(GL.GL_POINT_SPRITE);
+  gl.glEnableClientState(GL.GL_VERTEX_ARRAY);
+  gl.glEnable(GL.GL_VERTEX_PROGRAM_POINT_SIZE_ARB);
 
   gl.glColor3f(1, 1, 1);
   gl.glPointSize(35); 
   //  gl.glBegin(GL.GL_POINTS);
   shader.startShader();
 
-  particleImg.bind(gl);
-  particleImg.enable(gl);
+  particleImg.bind();
+  particleImg.enable();
 
   gl.glUniform1f(shader.getUniformLocation("gui"), 0.0f);
   gl.glUniform1f(shader.getUniformLocation("fogval"), 3000.0f);
   gl.glUniform1f(shader.getUniformLocation("pointSize"), 200.0f);
   
-  gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, nodes_vbo[0]);
-  gl.glVertexPointer(3, GL2.GL_FLOAT, 0, 0);
-  gl.glDrawArrays(GL2.GL_POINTS, 0, nodecount);
-  gl.glBindBuffer( GL2.GL_ARRAY_BUFFER, 0);
+  gl.glBindBuffer(GL.GL_ARRAY_BUFFER, nodes_vbo[0]);
+  gl.glVertexPointer(3, GL.GL_FLOAT, 0, 0);
+  gl.glDrawArrays(GL.GL_POINTS, 0, nodecount);
+  gl.glBindBuffer( GL.GL_ARRAY_BUFFER, 0);
   
 
-  particleImg.disable(gl);
+  particleImg.disable();
   
-  ringImg.bind(gl);
-  ringImg.enable(gl);
+  ringImg.bind();
+  ringImg.enable();
      gl.glUniform1f(shader.getUniformLocation("pointSize"), 200.0f);
- gl.glBindBuffer(GL2.GL_ARRAY_BUFFER, nodes_vbo[0]);
-  gl.glVertexPointer(3, GL2.GL_FLOAT, 0, 0);
-  gl.glDrawArrays(GL2.GL_POINTS, 0, nodecount);
-  gl.glBindBuffer( GL2.GL_ARRAY_BUFFER, 0);
+ gl.glBindBuffer(GL.GL_ARRAY_BUFFER, nodes_vbo[0]);
+  gl.glVertexPointer(3, GL.GL_FLOAT, 0, 0);
+  gl.glDrawArrays(GL.GL_POINTS, 0, nodecount);
+  gl.glBindBuffer( GL.GL_ARRAY_BUFFER, 0);
   
-  ringImg.disable(gl);
+  ringImg.disable();
   
   shader.endShader();
 
-  gl.glDisable(GL2.GL_POINT_SPRITE);
-  gl.glDisable(GL2.GL_VERTEX_PROGRAM_POINT_SIZE);
-  pgl.endPGL();
+  gl.glDisable(GL.GL_POINT_SPRITE);
+  gl.glDisable(GL.GL_VERTEX_PROGRAM_POINT_SIZE);
+  pgl.endGL();
  gl.glColor3f(1, 1, 1);
 
-  gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+  gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
   
   //smooth();
  if (showlines) {
@@ -209,7 +196,7 @@ public void keyPressed() {
 
 
 public void loadMatrix() {
-  gl.glMatrixMode(GL2.GL_PROJECTION);
+  gl.glMatrixMode(GL.GL_PROJECTION);
   projMatrix[0] = pgl.projection.m00;
   projMatrix[1] = pgl.projection.m10;
   projMatrix[2] = pgl.projection.m20;
@@ -232,7 +219,7 @@ public void loadMatrix() {
  
   gl.glLoadMatrixf(projMatrix, 0);
  
-  gl.glMatrixMode(GL2.GL_MODELVIEW);
+  gl.glMatrixMode(GL.GL_MODELVIEW);
   mvMatrix[0] = pgl.modelview.m00;
   mvMatrix[1] = pgl.modelview.m10;
   mvMatrix[2] = pgl.modelview.m20;
@@ -673,98 +660,95 @@ public int fastDist( int dx, int dy )
   return (( approx + 512 ) >> 10 );
 } 
 public void initShaders(){
-  PGraphicsOpenGL pgl = (PGraphicsOpenGL) g; 
-  GL2 gl = pgl.beginPGL().gl.getGL2(); 
-  shader = new GLSLshader(gl);
-  shader.loadVertexShader("pglslvs.vert");
-  shader.loadFragmentShader("pglslfs.frag");
-  shader.useShaders();
-  pgl.endPGL();
-  }
-class GLSLshader
-{
-  GL2 gl;
-  int programObject;
-  int vertexShader;
-  int fragmentShader;
-
-  GLSLshader(GL2 gl0)
-  {
-    gl = gl0;
-    programObject = gl.glCreateProgramObjectARB();
-    vertexShader = -1;
-    fragmentShader = -1;
-  }
-
-  public void loadVertexShader(String file)
-  {
-    String shaderSource = join(loadStrings(file), "\n");
-    vertexShader = gl.glCreateShaderObjectARB(GL2.GL_VERTEX_SHADER);
-    gl.glShaderSourceARB(vertexShader, 1, new String[]{
-      shaderSource                    }
-    , (int[]) null, 0);
-    gl.glCompileShaderARB(vertexShader);
-    checkLogInfo(gl, vertexShader);
-    gl.glAttachObjectARB(programObject, vertexShader);
-  }
-
-  public void loadFragmentShader(String file)
-  {
-    String shaderSource = join(loadStrings(file), "\n");
-    fragmentShader = gl.glCreateShaderObjectARB(GL2.GL_FRAGMENT_SHADER);
-    gl.glShaderSourceARB(fragmentShader, 1, new String[]{
-      shaderSource                    }
-    ,(int[]) null, 0);
-    gl.glCompileShaderARB(fragmentShader);
-    checkLogInfo(gl, fragmentShader);
-    gl.glAttachObjectARB(programObject, fragmentShader);
-  }
-
-  public int getAttribLocation(String name)
-  {
-    return(gl.glGetAttribLocation(programObject, name));
-  }
-
-  public int getUniformLocation(String name)
-  {
-    return(gl.glGetUniformLocation(programObject, name));
-  }
-
-  public void useShaders()
-  {
-    gl.glLinkProgramARB(programObject);
-    gl.glValidateProgramARB(programObject);
-    checkLogInfo(gl, programObject);
-  }
-
-  public void startShader()
-  {
-    gl = pgl.beginPGL().gl.getGL2();
-    gl.glUseProgramObjectARB(programObject);
-  }
-
-  public void endShader()
-  {
-    gl.glUseProgramObjectARB(0);
-  }
-
-  public void checkLogInfo(GL2 gl, int obj)
-  {
-    IntBuffer iVal = ByteBuffer.allocateDirect(1).order(ByteOrder.nativeOrder()).asIntBuffer();
-    gl.glGetObjectParameterivARB(obj, GL2.GL_OBJECT_INFO_LOG_LENGTH_ARB, iVal);
-    int length = 0;
-    try {
-     length = iVal.get();
-    } catch (Exception e) {}
-    if (length <= 1) return;
-    ByteBuffer infoLog =  ByteBuffer.allocateDirect(length).order(ByteOrder.nativeOrder());
-    iVal.flip();
-    gl.glGetInfoLogARB(obj, length, iVal, infoLog);
-    byte[] infoBytes = new byte[length];
-    infoLog.get(infoBytes);
-    println("GLSL Validation: \n" + new String(infoBytes));
-  }
+    PGraphicsOpenGL pgl = (PGraphicsOpenGL) g;
+    gl = pgl.gl;
+    shader = new GLSLshader(gl);
+    shader.loadVertexShader("pglslvs.vert");
+    shader.loadFragmentShader("pglslfs.frag");
+    shader.useShaders();
+    pgl.endGL();
 }
+    class GLSLshader
+    {
+        GL gl;
+        int programObject;
+        int vertexShader;
+        int fragmentShader;
+
+        GLSLshader(GL gl0)
+        {
+            gl = gl0;
+            programObject = gl.glCreateProgramObjectARB();
+            vertexShader = -1;
+            fragmentShader = -1;
+        }
+
+        void loadVertexShader(String file)
+        {
+            String shaderSource = join(loadStrings(file), "\n");
+            vertexShader = gl.glCreateShaderObjectARB(GL.GL_VERTEX_SHADER_ARB);
+            gl.glShaderSourceARB(vertexShader, 1, new String[]{
+                    shaderSource                    }
+                    , (int[]) null, 0);
+            gl.glCompileShaderARB(vertexShader);
+            checkLogInfo(gl, vertexShader);
+            gl.glAttachObjectARB(programObject, vertexShader);
+        }
+
+        void loadFragmentShader(String file)
+        {
+            String shaderSource = join(loadStrings(file), "\n");
+            fragmentShader = gl.glCreateShaderObjectARB(GL.GL_FRAGMENT_SHADER_ARB);
+            gl.glShaderSourceARB(fragmentShader, 1, new String[]{
+                    shaderSource                    }
+                    ,(int[]) null, 0);
+            gl.glCompileShaderARB(fragmentShader);
+            checkLogInfo(gl, fragmentShader);
+            gl.glAttachObjectARB(programObject, fragmentShader);
+        }
+
+        int getAttribLocation(String name)
+        {
+            return(gl.glGetAttribLocationARB(programObject, name));
+        }
+
+        int getUniformLocation(String name)
+        {
+            return(gl.glGetUniformLocationARB(programObject, name));
+        }
+
+        void useShaders()
+        {
+            gl.glLinkProgramARB(programObject);
+            gl.glValidateProgramARB(programObject);
+            checkLogInfo(gl, programObject);
+        }
+
+        void startShader()
+        {
+            gl.glUseProgramObjectARB(programObject);
+        }
+
+        void endShader()
+        {
+            gl.glUseProgramObjectARB(0);
+        }
+
+        void checkLogInfo(GL gl, int obj)
+        {
+            IntBuffer iVal = BufferUtil.newIntBuffer(1);
+            gl.glGetObjectParameterivARB(obj, GL.GL_OBJECT_INFO_LOG_LENGTH_ARB, iVal);
+
+            int length = iVal.get();
+            if (length <= 1) return;
+            ByteBuffer infoLog = BufferUtil.newByteBuffer(length);
+            iVal.flip();
+            gl.glGetInfoLogARB(obj, length, iVal, infoLog);
+            byte[] infoBytes = new byte[length];
+            infoLog.get(infoBytes);
+            println("GLSL Validation: \n" + new String(infoBytes));
+        }
+    }
 
 
 
@@ -786,12 +770,12 @@ Texture tex1,tex2,tex3,tex4,tex5,tex6;   // texture images
 public void loadSkybox(String skyboxName, String fExt) 
 { 
   try {
-    tex1 = AWTTextureIO.newTexture(GLProfile.getDefault(), ImageIO.read(new File(dataPath(skyboxName + "_front" + fExt))), true);
-    tex2 = AWTTextureIO.newTexture(GLProfile.getDefault(), ImageIO.read(new File(dataPath(skyboxName + "_back" + fExt))), true);
-    tex3 = AWTTextureIO.newTexture(GLProfile.getDefault(), ImageIO.read(new File(dataPath(skyboxName + "_left" + fExt))), true);
-    tex4 = AWTTextureIO.newTexture(GLProfile.getDefault(), ImageIO.read(new File(dataPath(skyboxName + "_right" + fExt))), true);
-    tex5 = AWTTextureIO.newTexture(GLProfile.getDefault(), ImageIO.read(new File(dataPath(skyboxName + "_bottom" + fExt))), true);
-    tex6 = AWTTextureIO.newTexture(GLProfile.getDefault(), ImageIO.read(new File(dataPath(skyboxName + "_top" + fExt))), true);
+    tex1 = TextureIO.newTexture(ImageIO.read(new File(dataPath(skyboxName + "_front" + fExt))), true);
+    tex2 = TextureIO.newTexture(ImageIO.read(new File(dataPath(skyboxName + "_back" + fExt))), true);
+    tex3 = TextureIO.newTexture(ImageIO.read(new File(dataPath(skyboxName + "_left" + fExt))), true);
+    tex4 = TextureIO.newTexture(ImageIO.read(new File(dataPath(skyboxName + "_right" + fExt))), true);
+    tex5 = TextureIO.newTexture(ImageIO.read(new File(dataPath(skyboxName + "_bottom" + fExt))), true);
+    tex6 = TextureIO.newTexture(ImageIO.read(new File(dataPath(skyboxName + "_top" + fExt))), true);
   }
   catch (IOException e) {    
     println( e);
@@ -813,9 +797,9 @@ public void TexturedCube()
 public void TexturedCubeSide(PVector P1, PVector P2, PVector P3, PVector P4, Texture tex)
 {
 
-  tex.enable(gl);
-  tex.bind(gl);
-  gl.glBegin(GL2.GL_QUADS);
+  tex.enable();
+  tex.bind();
+  gl.glBegin(GL.GL_QUADS);
   gl.glTexCoord2f(1.0f, 0.0f);
   gl.glVertex3f(P1.x, P1.y, P1.z);
   gl.glTexCoord2f(0.0f, 0.0f);
@@ -825,19 +809,19 @@ public void TexturedCubeSide(PVector P1, PVector P2, PVector P3, PVector P4, Tex
   gl.glTexCoord2f(1.0f, 1.0f);
   gl.glVertex3f(P4.x, P4.y, P4.z);
   gl.glEnd();
-  tex.disable(gl);
+  tex.disable();
 }
 
 public void initNodes() {
 
         
         if (nodecount > 0) {
-           pgl.beginPGL();
+           pgl.beginGL();
            gl.glGenBuffers( 1, nodes_vbo, 0 );
-           gl.glBindBuffer( GL2.GL_ARRAY_BUFFER, nodes_vbo[0] );
-           gl.glBufferData( GL2.GL_ARRAY_BUFFER, rts.length * 3 * 4, point3d_to_float_buffer( rts ), GL2.GL_STATIC_DRAW );
-           gl.glBindBuffer( GL2.GL_ARRAY_BUFFER, 0);
-           pgl.endPGL();
+           gl.glBindBuffer( GL.GL_ARRAY_BUFFER, nodes_vbo[0] );
+           gl.glBufferData( GL.GL_ARRAY_BUFFER, rts.length * 3 * 4, point3d_to_float_buffer( rts ), GL.GL_STATIC_DRAW );
+           gl.glBindBuffer( GL.GL_ARRAY_BUFFER, 0);
+           pgl.endGL();
          }
         // iconvbo = null;
     }
